@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/bundle.js",
+    "debug": "node-inspect dist/bundle.js",
     "build:dev": "webpack --config webpack.dev.js",
     "build:prod": "webpack --config webpack.prod.js",
     "build:watch": "webpack -w --config webpack.dev.js",
     "lint": "standard | snazzy"
   },
   "dependencies": {
+    "bluebird": "^3.5.1",
     "firebase-admin": "^5.12.1",
     "grpc": "^1.13.0",
     "lodash": "^4.17.10",
@@ -23,6 +25,7 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "http-server": "^0.11.1",
+    "node-inspect": "^1.11.5",
     "snazzy": "^7.1.1",
     "standard": "*",
     "uglifyjs-webpack-plugin": "^1.2.7",
