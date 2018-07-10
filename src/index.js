@@ -39,9 +39,8 @@ async function updateProds () {
       skipEmptyLines: true,
       complete: csvParsed => {
         console.log('los datos del csv de prods:', csvParsed)
-        console.log('cantidad prods:', csvParsed.data.length)
+        console.log('cantidad prods modificados:', csvParsed.data.length)
         prods.parseAndUploadProds(csvParsed.data)
-        prods.getProductsSize()
         fileStream.destroy()
       },
       error: err => {
