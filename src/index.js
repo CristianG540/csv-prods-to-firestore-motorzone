@@ -33,8 +33,6 @@ async function updateProds () {
   await fs.writeFileAsync('onlyModifiedProds.csv', fileData)
 
   try {
-    await prods.refreshOldProdsFile()
-
     let fileStream = fs.createReadStream('onlyModifiedProds.csv') // path.resolve(os.tmpdir(), 'fz3temp-3', 'product.txt')
     Papa.parse(fileStream, {
       header: true,
@@ -43,6 +41,7 @@ async function updateProds () {
         console.log('los datos del csv de prods:', csvParsed)
         console.log('cantidad prods:', csvParsed.data.length)
         prods.parseAndUploadProds(csvParsed.data)
+        prods.getProductsSize()
         fileStream.destroy()
       },
       error: err => {

@@ -66,11 +66,11 @@ export class ProductsHelper {
           } else {
             batch.set(docProdRef, {
               '_id': product.codigo,
-              'titulo': tituloApli[0],
-              'aplicacion': aplMarca[0],
+              'titulo': typeof tituloApli[0] !== 'undefined' ? tituloApli[0] : '',
+              'aplicacion': typeof aplMarca[0] !== 'undefined' ? aplMarca[0] : '',
               'imagen': 'https://www.igbcolombia.com/img_app_motozone/' + product.codigo + '.jpg',
-              'marcas': marcaUnd[0],
-              'unidad': marcaUnd[1],
+              'marcas': typeof marcaUnd[0] !== 'undefined' ? marcaUnd[0] : '',
+              'unidad': typeof marcaUnd[1] !== 'undefined' ? marcaUnd[1] : '',
               'existencias': parseInt(product.cantInventario),
               'precio': parseInt(product.precio1)
             })
@@ -79,6 +79,9 @@ export class ProductsHelper {
         // Commit the batch
         batch.commit().then(res => {
           console.log('Todo correcto al subir los prods:', res)
+          // si todo sale bien, actualizo el archivo con la copia de los productos
+          // para la sgte comparacion
+          this.refreshOldProdsFile()
         }).catch(err => console.error('error al subir los prods (batch)', err))
       } catch (err) {
         console.error('error en el proceso de analisis/manejo de los prods', err)
@@ -86,5 +89,13 @@ export class ProductsHelper {
     } else {
       console.warn('No se han detectado cambios en los productos')
     }
+  }
+
+  getProductsSize () {
+    this.firestoreDB.collection('products').get()
+      .then(snapshot => {
+        console.log('Cant productos en firestore:', snapshot.size)
+      })
+      .catch(err => console.log('Error getting documents', err))
   }
 }
