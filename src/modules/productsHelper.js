@@ -7,7 +7,8 @@ import Promise from 'bluebird'
 const exec = Promise.promisify(require('child_process').exec)
 
 export class ProductsHelper {
-  constructor (localDB, remoteDB) {
+  constructor (logger) {
+    this.logger = logger
     /** *** FIREBASE *****/
     // Fetch the service account key JSON file contents
     const serviceAccount = require('./../../motorzone-efef6-firebase-adminsdk-thfle-d2d5a6b23b.json')
@@ -41,7 +42,7 @@ export class ProductsHelper {
     */
     await exec(`cp ${env.prods_sap_file} old-files/oldProds.csv`)
 
-    console.log('Se refrescaron los archivos csv de comparacion "oldProds.csv"')
+    this.logger.info('Se refrescaron los archivos csv de comparacion "oldProds.csv" -- modules/productsHelper/refreshOldProdsFile()')
   }
 
   /**
@@ -104,17 +105,17 @@ export class ProductsHelper {
            * cada uno se ejecuta solo cuando hayan pasado los 5 del anterior
            */
           const batchRes = await Tools.promiseDelay(() => batch.commit(), 1000)
-          console.log('Todo correcto al subir los prods:', batchRes)
+          this.logger.info('Todo correcto al subir los prods -- modules/productsHelper/parseAndUploadProds() :', batchRes)
         }
 
         // si todo sale bien, actualizo el archivo con la copia de los productos
         // para la sgte comparacion
         this.refreshOldProdsFile()
       } catch (err) {
-        console.error('error en el proceso de analisis/manejo de los prods', err)
+        this.logger.error('error en el proceso de analisis/manejo de los prods -- modules/productsHelper/parseAndUploadProds() :', err)
       }
     } else {
-      console.warn('No se han detectado cambios en los productos')
+      this.logger.warn('No se han detectado cambios en los productos -- modules/productsHelper/parseAndUploadProds() :')
     }
   }
 

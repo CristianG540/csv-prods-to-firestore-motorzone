@@ -4,13 +4,55 @@ import { env } from './modules/env'
 import { ProductsHelper } from './modules/productsHelper'
 
 // Libs terceros
+import { createLogger, format, transports } from 'winston'
 import Papa from 'papaparse'
 import Promise from 'bluebird'
 const exec = Promise.promisify(require('child_process').exec)
 const fs = require('fs')
 Promise.promisifyAll(fs)
+require('winston-daily-rotate-file')
 
-const prods = new ProductsHelper()
+/* *********************************** Configuraciones Logger *************************************** */
+
+// Create the log directory if it does not exist
+if (!fs.existsSync('logs')) {
+  fs.mkdirSync('logs')
+}
+
+const logger = createLogger({
+  level: 'debug',
+  format: format.combine(
+    format.timestamp(),
+    format.json()
+  ),
+  transports: [
+    //
+    // - Write to all logs with level `info` and below to `combined.log`
+    // - Write all logs error (and below) to `error.log`.
+    //
+    new transports.DailyRotateFile({
+      filename: 'logs/error-%DATE%.log',
+      datePattern: 'YYYY-MM-DD-HH',
+      maxSize: '20m',
+      level: 'error'
+    }),
+    new transports.DailyRotateFile({
+      filename: 'logs/combined-%DATE%.log',
+      datePattern: 'YYYY-MM-DD-HH',
+      maxSize: '20m'
+    }),
+    // colorize the output to the console
+    new transports.Console({
+      format: format.combine(
+        format.colorize({ all: true }),
+        format.simple()
+      )
+    })
+  ]
+})
+/* *********************************** Fin configuraciones Logger *************************************** */
+
+const prods = new ProductsHelper(logger)
 
 async function updateProds () {
   /*
@@ -38,54 +80,21 @@ async function updateProds () {
       header: true,
       skipEmptyLines: true,
       complete: csvParsed => {
-        console.log('los datos del csv de prods:', csvParsed)
-        console.log('cantidad prods modificados:', csvParsed.data.length)
+        logger.info('los datos del csv de prods:', csvParsed)
+        logger.info('cantidad prods modificados:', csvParsed.data.length)
         prods.parseAndUploadProds(csvParsed.data)
         fileStream.destroy()
       },
       error: err => {
-        console.error('Puto error parseando onlyModifiedProds.csv', err)
+        logger.error('Puto error parseando onlyModifiedProds.csv', err)
         fileStream.destroy()
       }
     })
   } catch (err) {
-    console.error('error al refrescar old-files/oldProds.csv', err)
+    logger.error('error al refrescar old-files/oldProds.csv', err)
   }
 }
 
 Tools.setIntervalPlus(360, () => {
   updateProds()
 })
-
-/*
-const docRef = firestoreDB.collection('users').doc('alovelace')
-
-const setAda = docRef.set({
-  first: 'Ada',
-  last: 'Lovelace',
-  born: 1815
-})
-
-setAda
-  .then(res => {
-    console.log('Funciona esta porqueria putrida', res)
-  })
-  .catch(err => console.log('No funciona esta basura putrida', err))
-*/
-/*
-const aTuringRef = firestoreDB.collection('users').doc('aturing')
-const setAlan = aTuringRef.set({
-  'first': 'Alan',
-  'middle': 'Mathison',
-  'last': 'Turing',
-  'born': 1912
-})
-
-firestoreDB.collection('users').get()
-  .then(snapshot => {
-    _.each(snapshot.docs, doc => {
-      console.log(doc.id, '=>', doc.data())
-    })
-  })
-  .catch(err => console.log('Error getting documents', err))
-*/
