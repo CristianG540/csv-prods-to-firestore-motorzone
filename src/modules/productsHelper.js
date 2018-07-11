@@ -1,4 +1,6 @@
 import { env } from './env'
+import { chunk } from 'lodash'
+import { Tools } from './utils'
 
 import * as admin from 'firebase-admin'
 import Promise from 'bluebird'
@@ -38,6 +40,8 @@ export class ProductsHelper {
     * compararlos la proxima vez que se ejecute el setInterval
     */
     await exec(`cp ${env.prods_sap_file} old-files/oldProds.csv`)
+
+    console.log('Se refrescaron los archivos csv de comparacion "oldProds.csv"')
   }
 
   /**
@@ -48,41 +52,64 @@ export class ProductsHelper {
    *
    * @param {any[]} rawProducts recibe un array con los productos obtenidos del csv
    */
-  parseAndUploadProds (rawProducts) {
+  async parseAndUploadProds (rawProducts) {
     if (rawProducts.length > 0) {
       try {
         // Create a batch to run an atomic write
         const collectionProdsRef = this.firestoreDB.collection('products')
-        const batch = this.firestoreDB.batch()
 
-        for (const product of rawProducts) {
-          const tituloApli = product.descripcion.split('.')
-          const aplMarca = tituloApli[1] ? tituloApli[1].split('/') : tituloApli[0].split('/')
-          const marcaUnd = aplMarca[1] ? aplMarca[1].split('_') : aplMarca[0].split('_')
+        /**
+         * para evitar el problema de que firestore no deja modificar/crear mas de 500 documentos
+         * a la misma vez en un batch, divido el array de productos en un array de 49 productos,
+         * entonces me preguntare a mi mismo, y por mierda no lo divido en arrays de 500 productos
+         * y me respondere, "kyt prro" tampoco puedo divirlo en 500, por que cada vez que realizo
+         * una operacion en un documento, este lanza un evento en una funcion de firebase cloud functions
+         * que se encarga de contar los productos, el problema es que si actualizo 500 productos entonces
+         * esa funcion se lanza 500 veces en periodo de tiempo muy corto, esto me tira un error por que solo
+         * puedo ejecutar maximo 50 funciones en un lapso de 100 segundos
+         */
+        const chunksRawProducts = chunk(rawProducts, 49)
 
-          const docProdRef = collectionProdsRef.doc(product.codigo)
-          if (product._delete === 'true') {
-            batch.delete(docProdRef)
-          } else {
-            batch.set(docProdRef, {
-              '_id': product.codigo,
-              'titulo': typeof tituloApli[0] !== 'undefined' ? tituloApli[0] : '',
-              'aplicacion': typeof aplMarca[0] !== 'undefined' ? aplMarca[0] : '',
-              'imagen': 'https://www.igbcolombia.com/img_app_motozone/' + product.codigo + '.jpg',
-              'marcas': typeof marcaUnd[0] !== 'undefined' ? marcaUnd[0] : '',
-              'unidad': typeof marcaUnd[1] !== 'undefined' ? marcaUnd[1] : '',
-              'existencias': parseInt(product.cantInventario),
-              'precio': parseInt(product.precio1)
-            })
+        for (const products of chunksRawProducts) {
+          const batch = this.firestoreDB.batch()
+
+          for (const product of products) {
+            const tituloApli = product.descripcion.split('.')
+            const aplMarca = tituloApli[1] ? tituloApli[1].split('/') : tituloApli[0].split('/')
+            const marcaUnd = aplMarca[1] ? aplMarca[1].split('_') : aplMarca[0].split('_')
+
+            const docProdRef = collectionProdsRef.doc(product.codigo)
+            if (product._delete === 'true') {
+              batch.delete(docProdRef)
+            } else {
+              batch.set(docProdRef, {
+                '_id': product.codigo,
+                'titulo': typeof tituloApli[0] !== 'undefined' ? tituloApli[0] : '',
+                'aplicacion': typeof aplMarca[0] !== 'undefined' ? aplMarca[0] : '',
+                'imagen': 'https://www.igbcolombia.com/img_app_motozone/' + product.codigo + '.jpg',
+                'marcas': typeof marcaUnd[0] !== 'undefined' ? marcaUnd[0] : '',
+                'unidad': typeof marcaUnd[1] !== 'undefined' ? marcaUnd[1] : '',
+                'existencias': parseInt(product.cantInventario),
+                'precio': parseInt(product.precio1)
+              })
+            }
           }
+
+          /**
+           * para mitigar el problema de que firebase cloud functions no me deja ejecutar mas de 50 funciones
+           * en menos de 100 segundos, creo una especie de dalay. como el de underscore solo que este me devuelve
+           * una promesa, de esta forma lo puedo usar con async/await, la ventaja de poder usar el delay como una
+           * promesa es que el codigo del delay no se ejecuta concurrente, por ejemplo si lanzo 5 delays con un tiempo
+           * de 5 segundos, los 5 se lanzarian al mismo tiempo una vez pasen los 5 segundos, pero usando el async/await
+           * cada uno se ejecuta solo cuando hayan pasado los 5 del anterior
+           */
+          const batchRes = await Tools.promiseDelay(() => batch.commit(), 1000)
+          console.log('Todo correcto al subir los prods:', batchRes)
         }
-        // Commit the batch
-        batch.commit().then(res => {
-          console.log('Todo correcto al subir los prods:', res)
-          // si todo sale bien, actualizo el archivo con la copia de los productos
-          // para la sgte comparacion
-          this.refreshOldProdsFile()
-        }).catch(err => console.error('error al subir los prods (batch)', err))
+
+        // si todo sale bien, actualizo el archivo con la copia de los productos
+        // para la sgte comparacion
+        this.refreshOldProdsFile()
       } catch (err) {
         console.error('error en el proceso de analisis/manejo de los prods', err)
       }

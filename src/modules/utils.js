@@ -1,3 +1,6 @@
+import { delay } from 'lodash'
+import Promise from 'bluebird'
+
 export class Tools {
   /**
    * Esta funcion es algo asi como una version mejorada del setInterval
@@ -14,5 +17,24 @@ export class Tools {
   static setIntervalPlus (seconds, callback) {
     callback()
     return setInterval(callback, seconds * 1000)
+  }
+
+  /**
+   *
+   *
+   * @static
+   * @param {Promise} fn
+   * @param {number} time
+   * @returns {Promise} promesa con al vuelta
+   * @memberof Tools
+   */
+  static async promiseDelay (fn, time) {
+    return new Promise((resolve, reject) => {
+      delay(() => {
+        fn()
+          .then(res => resolve(res))
+          .catch(err => reject(err))
+      }, time)
+    })
   }
 }
