@@ -80,7 +80,7 @@ async function updateProds () {
       header: true,
       skipEmptyLines: true,
       complete: csvParsed => {
-        logger.info('cantidad prods modificados:', String(csvParsed.data.length))
+        logger.info(`cantidad prods modificados: ${csvParsed.data.length}`)
         prods.parseAndUploadProds(csvParsed.data)
         fileStream.destroy()
       },
