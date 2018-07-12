@@ -1,4 +1,5 @@
 import { createLogger, format, transports } from 'winston'
+require('winston-daily-rotate-file')
 
 export const logger = createLogger({
   level: 'debug',

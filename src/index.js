@@ -10,7 +10,6 @@ import Promise from 'bluebird'
 const exec = Promise.promisify(require('child_process').exec)
 const fs = require('fs')
 Promise.promisifyAll(fs)
-require('winston-daily-rotate-file')
 
 /* *********************************** Configuraciones Logger *************************************** */
 
