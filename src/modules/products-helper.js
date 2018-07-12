@@ -104,7 +104,7 @@ export class ProductsHelper {
            * de 5 segundos, los 5 se lanzarian al mismo tiempo una vez pasen los 5 segundos, pero usando el async/await
            * cada uno se ejecuta solo cuando hayan pasado los 5 del anterior
            */
-          const batchRes = await Tools.promiseDelay(() => batch.commit(), 1000)
+          const batchRes = await Tools.promiseDelay(() => batch.commit(), 5000)
           this.logger.info('Todo correcto al subir los prods -- modules/productsHelper/parseAndUploadProds() :', batchRes)
         }
 
