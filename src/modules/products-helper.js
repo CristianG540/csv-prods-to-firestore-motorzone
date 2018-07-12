@@ -1,24 +1,15 @@
-import { env } from './env'
 import { chunk } from 'lodash'
 import { Tools } from './utils'
 
-import * as admin from 'firebase-admin'
 import Promise from 'bluebird'
 const exec = Promise.promisify(require('child_process').exec)
 
 export class ProductsHelper {
-  constructor (logger) {
+  constructor (bd, csvFile, logger, firestore) {
+    this.bd = bd
+    this.csvFile = csvFile
     this.logger = logger
-    /** *** FIREBASE *****/
-    // Fetch the service account key JSON file contents
-    const serviceAccount = require('./../../motorzone-efef6-firebase-adminsdk-thfle-d2d5a6b23b.json')
-    // Initialize the app with a service account, granting admin privileges
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    })
-    // As an admin, the app has access to read and write all data, regardless of Security Rules
-    this.firestoreDB = admin.firestore()
-    /** *** end FIREBASE *****/
+    this.firestoreDB = firestore
   }
 
   /**
@@ -32,17 +23,17 @@ export class ProductsHelper {
     * Elimino los archivos viejos que hayan en la carpeta de comparacion
     */
     try {
-      await exec('rm -r old-files/oldProds.csv')
+      await exec(`rm -r old-files/old-${this.bd}.csv`)
     } catch (error) {
-      await exec(`cp ${env.prods_sap_file} old-files/oldProds.csv`)
+      await exec(`cp ${this.csvFile} old-files/old-${this.bd}.csv`)
     }
     /*
     * Copio el archivo csv con los productos nuevos a la carpeta de comparacion para
     * compararlos la proxima vez que se ejecute el setInterval
     */
-    await exec(`cp ${env.prods_sap_file} old-files/oldProds.csv`)
+    await exec(`cp ${this.csvFile} old-files/old-${this.bd}.csv`)
 
-    this.logger.info('Se refrescaron los archivos csv de comparacion "oldProds.csv" -- modules/productsHelper/refreshOldProdsFile()')
+    this.logger.info(`Se refrescaron los archivos csv de comparacion "old-${this.bd}.csv" -- modules/productsHelper/refreshOldProdsFile()`)
   }
 
   /**
@@ -57,7 +48,7 @@ export class ProductsHelper {
     if (rawProducts.length > 0) {
       try {
         // Create a batch to run an atomic write
-        const collectionProdsRef = this.firestoreDB.collection('products')
+        const collectionProdsRef = this.firestoreDB.collection(this.bd)
 
         /**
          * para evitar el problema de que firestore no deja modificar/crear mas de 500 documentos
@@ -98,7 +89,7 @@ export class ProductsHelper {
 
           /**
            * para mitigar el problema de que firebase cloud functions no me deja ejecutar mas de 50 funciones
-           * en menos de 100 segundos, creo una especie de dalay. como el de underscore solo que este me devuelve
+           * en menos de 100 segundos, creo una especie de delay. como el de underscore solo que este me devuelve
            * una promesa, de esta forma lo puedo usar con async/await, la ventaja de poder usar el delay como una
            * promesa es que el codigo del delay no se ejecuta concurrente, por ejemplo si lanzo 5 delays con un tiempo
            * de 5 segundos, los 5 se lanzarian al mismo tiempo una vez pasen los 5 segundos, pero usando el async/await
