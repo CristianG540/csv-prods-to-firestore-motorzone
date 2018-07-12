@@ -20,7 +20,7 @@ export const logger = createLogger({
     }),
     new transports.DailyRotateFile({
       filename: 'logs/combined-%DATE%.log',
-      datePattern: 'YYYY-MM-DD-HH',
+      datePattern: 'YYYY-MM-DD',
       maxSize: '20m'
     }),
     // colorize the output to the console
