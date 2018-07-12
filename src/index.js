@@ -32,7 +32,7 @@ const logger = createLogger({
     //
     new transports.DailyRotateFile({
       filename: 'logs/error-%DATE%.log',
-      datePattern: 'YYYY-MM-DD-HH',
+      datePattern: 'YYYY-MM-DD',
       maxSize: '20m',
       level: 'error'
     }),
@@ -80,8 +80,7 @@ async function updateProds () {
       header: true,
       skipEmptyLines: true,
       complete: csvParsed => {
-        logger.info('los datos del csv de prods:', csvParsed)
-        logger.info('cantidad prods modificados:', csvParsed.data.length)
+        logger.info('cantidad prods modificados:', String(csvParsed.data.length))
         prods.parseAndUploadProds(csvParsed.data)
         fileStream.destroy()
       },
