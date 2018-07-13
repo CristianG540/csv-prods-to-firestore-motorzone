@@ -30,7 +30,7 @@ admin.initializeApp({
 })
 /** *** end FIREBASE *****/
 
-async function updateProds (bd, csvFile, firestore) {
+async function updateProds (bd, csvFile) {
   const prods = new ProductsHelper(bd, csvFile, logger, admin.firestore())
   /*
   * Con este comando uso git diff y un pequeño script one liner en perl
@@ -71,7 +71,32 @@ async function updateProds (bd, csvFile, firestore) {
   }
 }
 
+async function lookForDiffs (bd, csvFile) {
+  const prods = new ProductsHelper(bd, csvFile, logger, admin.firestore())
+  try {
+    let fileStream = fs.createReadStream(csvFile) // path.resolve(os.tmpdir(), 'fz3temp-3', 'product.txt')
+    Papa.parse(fileStream, {
+      header: true,
+      complete: csvParsed => {
+        prods.checkAndResolve(csvParsed.data)
+        fileStream.destroy()
+      },
+      error: err => {
+        logger.error(`Puto error parseando -- ${csvFile}`, err)
+        fileStream.destroy()
+      }
+    })
+  } catch (err) {
+    logger.error(`Error desconocido lookForDiffs() -- ${bd}`, err)
+  }
+}
+
 Tools.setIntervalPlus(360, () => {
   updateProds('products', env.prods_sap_file)
   updateProds('prods-bogota', env.prods_sap_file_bogota)
+})
+
+Tools.setIntervalPlus(1800, () => {
+  lookForDiffs('products', env.prods_sap_file).catch(err => logger.error(`error lookForDiffs "products"`, err))
+  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => logger.error(`error lookForDiffs "prods-bogota"`, err))
 })

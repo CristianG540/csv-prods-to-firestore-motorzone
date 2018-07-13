@@ -1,10 +1,18 @@
-import { chunk } from 'lodash'
+import { chunk, has } from 'lodash'
 import { Tools } from './utils'
 
 import Promise from 'bluebird'
 const exec = Promise.promisify(require('child_process').exec)
 
 export class ProductsHelper {
+  /**
+   *Creates an instance of ProductsHelper.
+   * @param {string} bd
+   * @param {string} csvFile
+   * @param {winston.Logger} logger
+   * @param {FirebaseFirestore.Firestore} firestore
+   * @memberof ProductsHelper
+   */
   constructor (bd, csvFile, logger, firestore) {
     this.bd = bd
     this.csvFile = csvFile
@@ -47,7 +55,6 @@ export class ProductsHelper {
   async parseAndUploadProds (rawProducts) {
     if (rawProducts.length > 0) {
       try {
-        // Create a batch to run an atomic write
         const collectionProdsRef = this.firestoreDB.collection(this.bd)
 
         /**
@@ -63,6 +70,7 @@ export class ProductsHelper {
         const chunksRawProducts = chunk(rawProducts, 49)
 
         for (const products of chunksRawProducts) {
+          // Create a batch to run an atomic write
           const batch = this.firestoreDB.batch()
 
           for (const product of products) {
@@ -107,6 +115,44 @@ export class ProductsHelper {
       }
     } else {
       this.logger.warn('No se han detectado cambios en los productos -- modules/productsHelper/parseAndUploadProds() :')
+    }
+  }
+
+  async checkAndResolve (csvProds) {
+    try {
+      let prodstoUpdate = []
+      // Create a batch to run an atomic write
+      const batch = this.firestoreDB.batch()
+
+      const collectionProdsRef = this.firestoreDB.collection(this.bd)
+      const snapshotProds = await collectionProdsRef.orderBy('_id').get()
+
+      snapshotProds.forEach(prod => {
+        // busco el producto de firebase en el csv con los productos a ver si esta
+        const iCsvProd = Tools.binarySearch(csvProds, 'codigo', prod.id)
+
+        if (has(csvProds[iCsvProd], 'codigo') && csvProds[iCsvProd].codigo === prod.id) {
+          // si el producto esta en el csv y la cantidad es diferente a la cantidad en firestore, entonces actualizo el produto en firstore
+          if (prod.data().existencias !== parseInt(csvProds[iCsvProd].cantInventario, 10)) {
+            // agrego el producto aun array con los productos modificados para llevar un registro
+            prodstoUpdate.push(prod.data())
+            batch.update(prod.ref, {
+              origen: 'sap',
+              updated_at: Date.now(),
+              existencias: parseInt(csvProds[iCsvProd].cantInventario, 10)
+            })
+          }
+        } else {
+          prodstoUpdate.push(prod.data())
+          batch.delete(prod.ref)
+        }
+      })
+
+      await batch.commit()
+      this.logger.info(`Todo correcto al actualizar los prods (${this.bd}) -- modules/productsHelper/checkAndResolve() :`, prodstoUpdate)
+    } catch (err) {
+      this.logger.error(`Error en el proceso de analisis/manejo de los prods (${this.bd}) -- modules/productsHelper/checkAndResolve() :`, err)
+      throw err
     }
   }
 
