@@ -53,6 +53,7 @@ async function updateProds (bd, csvFile) {
 
   try {
     let fileStream = fs.createReadStream(`onlyModifiedProds-${bd}.csv`)
+    fileStream.on('err', err => logger.error(`updateProds() - error al leer el puto archivo ${csvFile}`, [err.toString()]))
     Papa.parse(fileStream, {
       header: true,
       skipEmptyLines: true,
@@ -83,7 +84,7 @@ async function lookForDiffs (bd, csvFile) {
         fileStream.destroy()
       },
       error: err => {
-        logger.error(`Puto error parseando -- ${csvFile}`, [err.toString()])
+        logger.error(`Puto error parseando lookForDiffs() -- ${csvFile}`, [err.toString()])
         fileStream.destroy()
       }
     })
@@ -93,11 +94,19 @@ async function lookForDiffs (bd, csvFile) {
 }
 
 Tools.setIntervalPlus(360, () => {
-  updateProds('products', env.prods_sap_file)
-  updateProds('prods-bogota', env.prods_sap_file_bogota)
+  updateProds('products', env.prods_sap_file).catch(err => {
+    logger.error(`error updateProds() "products"`, [err.toString()])
+  })
+  updateProds('prods-bogota', env.prods_sap_file_bogota).catch(err => {
+    logger.error(`error updateProds() "prods-bogota"`, [err.toString()])
+  })
 })
 
 Tools.setIntervalPlus(1800, () => {
-  lookForDiffs('products', env.prods_sap_file).catch(err => logger.error(`error lookForDiffs "products"`, [err.toString()]))
-  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => logger.error(`error lookForDiffs "prods-bogota"`, [err.toString()]))
+  lookForDiffs('products', env.prods_sap_file).catch(err => {
+    logger.error(`error lookForDiffs() "products"`, [err.toString()])
+  })
+  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => {
+    logger.error(`error lookForDiffs() "prods-bogota"`, [err.toString()])
+  })
 })
