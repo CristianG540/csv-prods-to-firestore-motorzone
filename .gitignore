@@ -33,7 +33,6 @@ $RECYCLE.BIN/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate
-/src/modules/env.js
 
 motorzone-efef6-firebase-adminsdk-thfle-d2d5a6b23b.json
 onlyModifiedProds.csv
