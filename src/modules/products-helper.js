@@ -111,7 +111,7 @@ export class ProductsHelper {
         // para la sgte comparacion
         this.refreshOldProdsFile()
       } catch (err) {
-        this.logger.error('error en el proceso de analisis/manejo de los prods -- modules/productsHelper/parseAndUploadProds() :', err)
+        this.logger.error('error en el proceso de analisis/manejo de los prods -- modules/productsHelper/parseAndUploadProds() :', [err.toString()])
       }
     } else {
       this.logger.warn('No se han detectado cambios en los productos -- modules/productsHelper/parseAndUploadProds() :')
@@ -151,7 +151,7 @@ export class ProductsHelper {
       await batch.commit()
       this.logger.info(`Todo correcto al actualizar los prods (${this.bd}) -- modules/productsHelper/checkAndResolve() :`, prodstoUpdate)
     } catch (err) {
-      this.logger.error(`Error en el proceso de analisis/manejo de los prods (${this.bd}) -- modules/productsHelper/checkAndResolve() :`, err)
+      this.logger.error(`Error en el proceso de analisis/manejo de los prods (${this.bd}) -- modules/productsHelper/checkAndResolve() :`, [err.toString()])
       throw err
     }
   }

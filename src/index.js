@@ -62,21 +62,20 @@ async function updateProds (bd, csvFile) {
         fileStream.destroy()
       },
       error: err => {
-        logger.error(`Puto error parseando onlyModifiedProds-${bd}.csv`, err)
+        logger.error(`Puto error parseando onlyModifiedProds-${bd}.csv`, [err.toString()])
         fileStream.destroy()
       }
     })
   } catch (err) {
-    logger.error(`error al refrescar old-files/old-${bd}.csv`, err)
+    logger.error(`error al refrescar old-files/old-${bd}.csv`, [err.toString()])
   }
 }
 
 async function lookForDiffs (bd, csvFile) {
   const prods = new ProductsHelper(bd, csvFile, logger, admin.firestore())
   try {
-    console.log('perros hptas', csvFile)
     let fileStream = fs.createReadStream(csvFile) // path.resolve(os.tmpdir(), 'fz3temp-3', 'product.txt')
-    fileStream.on('err', err => logger.error(`lookForDiffs() - error al leer el puto archivo ${csvFile}`, err))
+    fileStream.on('err', err => logger.error(`lookForDiffs() - error al leer el puto archivo ${csvFile}`, [err.toString()]))
     Papa.parse(fileStream, {
       header: true,
       complete: csvParsed => {
@@ -84,7 +83,7 @@ async function lookForDiffs (bd, csvFile) {
         fileStream.destroy()
       },
       error: err => {
-        logger.error(`Puto error parseando -- ${csvFile}`, err)
+        logger.error(`Puto error parseando -- ${csvFile}`, [err.toString()])
         fileStream.destroy()
       }
     })
@@ -93,14 +92,12 @@ async function lookForDiffs (bd, csvFile) {
   }
 }
 
-/*
 Tools.setIntervalPlus(360, () => {
   updateProds('products', env.prods_sap_file)
   updateProds('prods-bogota', env.prods_sap_file_bogota)
 })
-*/
 
 Tools.setIntervalPlus(1800, () => {
-  lookForDiffs('products', env.prods_sap_file).catch(err => logger.error(`error lookForDiffs "products"`, err))
-  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => logger.error(`error lookForDiffs "prods-bogota"`, err))
+  lookForDiffs('products', env.prods_sap_file).catch(err => logger.error(`error lookForDiffs "products"`, [err.toString()]))
+  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => logger.error(`error lookForDiffs "prods-bogota"`, [err.toString()]))
 })
