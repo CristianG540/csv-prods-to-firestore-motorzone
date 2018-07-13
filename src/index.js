@@ -74,8 +74,8 @@ async function updateProds (bd, csvFile) {
 async function lookForDiffs (bd, csvFile) {
   const prods = new ProductsHelper(bd, csvFile, logger, admin.firestore())
   try {
-    console.log('perros hptas', bd)
     let fileStream = fs.createReadStream(csvFile) // path.resolve(os.tmpdir(), 'fz3temp-3', 'product.txt')
+    console.log('perros hptas', csvFile)
     Papa.parse(fileStream, {
       header: true,
       complete: csvParsed => {
