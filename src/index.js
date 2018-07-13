@@ -103,5 +103,8 @@ Tools.setIntervalPlus(360, () => {
 
 Tools.setIntervalPlus(1800, () => {
   lookForDiffs('products', env.prods_sap_file).catch(err => logger.error(`error lookForDiffs "products"`, err))
-  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => logger.error(`error lookForDiffs "prods-bogota"`, err))
+  lookForDiffs('prods-bogota', env.prods_sap_file_bogota).catch(err => {
+    logger.error(`error lookForDiffs "prods-bogota"`, err)
+    throw err
+  })
 })
