@@ -91,10 +91,12 @@ async function lookForDiffs (bd, csvFile) {
   }
 }
 
+/*
 Tools.setIntervalPlus(360, () => {
   updateProds('products', env.prods_sap_file)
   updateProds('prods-bogota', env.prods_sap_file_bogota)
 })
+*/
 
 Tools.setIntervalPlus(1800, () => {
   lookForDiffs('products', env.prods_sap_file).catch(err => logger.error(`error lookForDiffs "products"`, err))
