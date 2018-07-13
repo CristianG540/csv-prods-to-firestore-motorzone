@@ -89,7 +89,7 @@ async function lookForDiffs (bd, csvFile) {
       }
     })
   } catch (err) {
-    logger.error(`Error desconocido lookForDiffs() -- ${bd}`, JSON.stringify(err))
+    logger.error(`Error desconocido lookForDiffs() -- ${bd}`, [err.toString()])
   }
 }
 
