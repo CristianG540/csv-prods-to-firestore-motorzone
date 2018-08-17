@@ -90,7 +90,8 @@ export class ProductsHelper {
                 'marcas': typeof marcaUnd[0] !== 'undefined' ? marcaUnd[0] : '',
                 'unidad': typeof marcaUnd[1] !== 'undefined' ? marcaUnd[1] : '',
                 'existencias': parseInt(product.cantInventario),
-                'precio': parseInt(product.precio1)
+                'precio': parseInt(product.precio1),
+                'descuento': product.descuento
               })
             }
           }

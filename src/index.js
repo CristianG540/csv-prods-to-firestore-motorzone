@@ -47,7 +47,7 @@ async function updateProds (bd, csvFile) {
   * Como el resultado del comando anterior no me trae el encabezado del csv entonces
   * lo agrego con las sgtes lineas
   */
-  let fileData = 'codigo;descripcion;precio1;cantInventario;_delete\n'
+  let fileData = 'codigo;descripcion;precio1;cantInventario;descuento;_delete\n'
   fileData += await fs.readFileAsync(`onlyModifiedProds-${bd}.csv`, 'utf8')
   await fs.writeFileAsync(`onlyModifiedProds-${bd}.csv`, fileData)
 
